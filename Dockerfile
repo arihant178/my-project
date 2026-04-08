@@ -5,7 +5,9 @@ WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 
-RUN mvn clean package -DskipTests
+ENV MAVEN_OPTS="-Dhttps.protocols=TLSv1.2 -Dmaven.wagon.http.retryHandler.count=3"
+
+RUN mvn -U clean package -DskipTests
 
 FROM eclipse-temurin:17-jdk
 
