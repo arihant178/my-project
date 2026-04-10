@@ -19,39 +19,29 @@ pipeline {
         stage('Set Environment') {
             steps {
                 script {
-                    def containerName = ""
-                    def hostPort = ""
-                    def imageTag = ""
-                    def deployAllowed = "false"
-
                     if (env.BRANCH_NAME == "dev") {
-                        containerName = "dev-java-app"
-                        hostPort = "8081"
-                        imageTag = "dev"
-                        deployAllowed = "true"
+                        env.CONTAINER_NAME = "dev-java-app"
+                        env.HOST_PORT = "8081"
+                        env.IMAGE_TAG = "dev"
+                        env.DEPLOY_ALLOWED = "true"
                     } else if (env.BRANCH_NAME == "test") {
-                        containerName = "test-java-app"
-                        hostPort = "8082"
-                        imageTag = "test"
-                        deployAllowed = "true"
+                        env.CONTAINER_NAME = "test-java-app"
+                        env.HOST_PORT = "8082"
+                        env.IMAGE_TAG = "test"
+                        env.DEPLOY_ALLOWED = "true"
                     } else if (env.BRANCH_NAME == "qat") {
-                        containerName = "qat-java-app"
-                        hostPort = "8083"
-                        imageTag = "qat"
-                        deployAllowed = "true"
+                        env.CONTAINER_NAME = "qat-java-app"
+                        env.HOST_PORT = "8083"
+                        env.IMAGE_TAG = "qat"
+                        env.DEPLOY_ALLOWED = "true"
                     } else if (env.BRANCH_NAME == "main") {
-                        containerName = "prod-java-app"
-                        hostPort = "8084"
-                        imageTag = "main"
-                        deployAllowed = "true"
+                        env.CONTAINER_NAME = "prod-java-app"
+                        env.HOST_PORT = "8084"
+                        env.IMAGE_TAG = "main"
+                        env.DEPLOY_ALLOWED = "true"
                     } else {
                         echo "Branch ${env.BRANCH_NAME} is not configured for deployment"
                     }
-
-                    env.CONTAINER_NAME = containerName
-                    env.HOST_PORT = hostPort
-                    env.IMAGE_TAG = imageTag
-                    env.DEPLOY_ALLOWED = deployAllowed
 
                     echo "BRANCH_NAME=${env.BRANCH_NAME}"
                     echo "CONTAINER_NAME=${env.CONTAINER_NAME}"
@@ -63,6 +53,9 @@ pipeline {
         }
 
         stage('Build Docker Image') {
+            when {
+                expression { env.DEPLOY_ALLOWED == "true" }
+            }
             steps {
                 sh "docker build -t ${env.APP_NAME}:${env.IMAGE_TAG} ."
             }
