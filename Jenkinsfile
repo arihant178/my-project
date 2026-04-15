@@ -42,7 +42,30 @@ pipeline {
                     } else {
                         echo "Branch ${env.BRANCH_NAME} is not configured for deployment"
                         env.DEPLOY_ALLOWED = "false"
+                    if (env.BRANCH_NAME?.trim() == "dev") {
+                        env.CONTAINER_NAME = "dev-java-app"
+                        env.HOST_PORT = "8081"
+                        env.IMAGE_TAG = "dev"
+                    } else if (env.BRANCH_NAME?.trim() == "test") {
+                        env.CONTAINER_NAME = "test-java-app"
+                        env.HOST_PORT = "8082"
+                        env.IMAGE_TAG = "test"
+                    } else if (env.BRANCH_NAME?.trim() == "qat") {
+                        env.CONTAINER_NAME = "qat-java-app"
+                        env.HOST_PORT = "8083"
+                        env.IMAGE_TAG = "qat"
+                    } else if (env.BRANCH_NAME?.trim() == "main") {
+                        env.CONTAINER_NAME = "prod-java-app"
+                        env.HOST_PORT = "8084"
+                        env.IMAGE_TAG = "main"
+                    } else {
+                        error("Unsupported branch for deployment: ${env.BRANCH_NAME}")
                     }
+
+                    echo "BRANCH_NAME=${env.BRANCH_NAME}"
+                    echo "CONTAINER_NAME=${env.CONTAINER_NAME}"
+                    echo "HOST_PORT=${env.HOST_PORT}"
+                    echo "IMAGE_TAG=${env.IMAGE_TAG}"
                 }
             }
         }
@@ -50,6 +73,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t ${APP_NAME}:${IMAGE_TAG} .'
+                sh "docker build -t ${env.APP_NAME}:${env.IMAGE_TAG} ."
             }
         }
 
@@ -60,6 +84,9 @@ pipeline {
             steps {
                 sh 'docker stop ${CONTAINER_NAME} || true'
                 sh 'docker rm ${CONTAINER_NAME} || true'
+            steps {
+                sh "docker stop ${env.CONTAINER_NAME} || true"
+                sh "docker rm ${env.CONTAINER_NAME} || true"
             }
         }
 
@@ -69,6 +96,8 @@ pipeline {
             }
             steps {
                 sh 'docker run -d --name ${CONTAINER_NAME} -p ${HOST_PORT}:8080 ${APP_NAME}:${IMAGE_TAG}'
+            steps {
+                sh "docker run -d --name ${env.CONTAINER_NAME} -p ${env.HOST_PORT}:8080 ${env.APP_NAME}:${env.IMAGE_TAG}"
             }
         }
 
@@ -78,6 +107,8 @@ pipeline {
             }
             steps {
                 sh 'docker ps | grep ${CONTAINER_NAME}'
+            steps {
+                sh "docker ps | grep ${env.CONTAINER_NAME}"
             }
         }
     }
